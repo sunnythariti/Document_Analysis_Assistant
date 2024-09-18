@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Name of chatbot</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Futura:wght@400;700&display=swap');
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #000000;
+            color: #FFFFFF;
+            background-image: url("{{ url_for('static', filename='You can add background as you want') }}");
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            position: relative;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-family: 'Futura', 'Trebuchet MS', Arial, sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .chat-area {
+            background-color: rgba(68, 68, 68, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            height: 300px;
+            overflow-y: auto;
+            font-size: 16px;
+        }
+        .input-area {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #E91E63;
+            color: #FFFFFF;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #D81B60;
+        }
+        .logout-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #444444;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+        .reset-button {
+            background-color: #FFA500;
+        }
+        .reset-button:hover {
+            background-color: #FF8C00;
+        }
+        /* Updated styles for user and chatbot messages */
+        .user-label {
+            font-weight: 700;
+            color: #FFFFFF; /* White color for user label */
+        }
+        .chatbot-label {
+            font-weight: 700;
+            color: #F8C8DC; /* Light pink color for chatbot label */
+        }
+        .user-message {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #FFFFFF; /* White color for user messages */
+            font-weight: 700;
+        }
+        .chatbot-response {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #F8C8DC; /* Light pink color for chatbot messages */
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="logout-button" onclick="logout()">Logout</button>
+        <div class="header">
+            <img src="{{ url_for('static', filename='Logo as you want') }}" alt="Logo" height="40">
+            <h2>Document Analysis Assistance Webapp</h2>
+        </div>
+        <div class="chat-area" id="chatArea"></div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Type your message...">
+            <div class="button-group">
+                <button onclick="sendMessage()">Send</button>
+                <input type="file" id="fileInput" style="display: none;">
+                <button onclick="document.getElementById('fileInput').click()">Upload File</button>
+                <button class="reset-button" onclick="resetChat()">Reset</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let fileContent = '';
+
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        fileContent = data.content;
+                        chatArea.innerHTML += `<p>File uploaded: ${file.name}</p>`;
+                    } else {
+                        chatArea.innerHTML += `<p>Error: ${data.error}</p>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    chatArea.innerHTML += `<p>Error uploading file</p>`;
+                });
+            }
+        });
+
+        function sendMessage() {
+            const userInput = document.getElementById('userInput');
+            const chatArea = document.getElementById('chatArea');
+            const message = userInput.value.trim();
+
+            if (message) {
+                chatArea.innerHTML += `<p><strong class="user-label">You:</strong> <span class="user-message">${message}</span></p>`;
+                userInput.value = '';
+
+                fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        file_content: fileContent
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.response) {
+                        chatArea.innerHTML += `<p><strong class="chatbot-label">Chatbot:</strong> <span class="chatbot-response">${data.response}</span></p>`;
+                    } else if (data.error) {
+                        chatArea.innerHTML += `<p><strong>Error:</strong> ${data.error}</p>`;
+                    }
+                    chatArea.scrollTop = chatArea.scrollHeight;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    chatArea.innerHTML += `<p><strong>Error:</strong> Failed to get response</p>`;
+                    chatArea.scrollTop = chatArea.scrollHeight;
+                });
+            }
+        }
+
+        function resetChat() {
+            const chatArea = document.getElementById('chatArea');
+            const fileInput = document.getElementById('fileInput');
+
+            chatArea.innerHTML = '';
+            fileInput.value = '';
+            fileContent = '';
+
+            chatArea.innerHTML = '<p><em>Chat has been reset. You can start a new conversation or upload a new file.</em></p>';
+
+            document.getElementById('userInput').value = '';
+        }
+
+        function logout() {
+            window.location.href = "{{ url_for('logout') }}";
+        }
+    </script>
+</body>
+</html>

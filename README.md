@@ -3,6 +3,14 @@
 ## Project Overview
 This project is a web-based document analysis tool that allows users to upload various types of documents, process them, and interact with an AI assistant to analyze the content inside the files.
 
+## Analyze capability
+-XLXS.
+-DOCX.
+-PPTX.
+-PDF.
+
+**Note**: Always be mindful of the file sizes and the token limits set in the code. If these do not match, the AI chatbot may not function correctly, especially with image file types.
+
 ## Essential Adjustments
 Before using the code, make sure to:
 - Use your own API Key
@@ -10,8 +18,6 @@ Before using the code, make sure to:
 - Choose your preferred AI model
 - Adjust content length according to your requirements
 -You can add a background and logo in both login and index.HTML
-
-**Note**: Always be mindful of the file sizes and the token limits set in the code. If these do not match, the AI chatbot may not function correctly, especially with image file types.
 
 ## Getting Started
 
